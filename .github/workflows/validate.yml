@@ -1,0 +1,19 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: ha-parcel-integrations/.github/.github/workflows/carrier-validate.yml@main
+    with:
+      domain: acs_courier

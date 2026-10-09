@@ -1,0 +1,40 @@
+{
+  "count": 1,
+  "items": [
+    {
+      "trackingNumber": "TEST_CODE",
+      "relatedTrackingNumber": "TEST_CODE",
+      "pickupStation": "XX-1",
+      "pickupDescription": "ACS Station",
+      "pickupPrefecture": 19,
+      "destinationPrefecture": -1,
+      "pickupRegion": 3,
+      "destinationRegion": -1,
+      "recipient": "REDACTED",
+      "nonDeliveryReason": "",
+      "notes": "Returned and delivered to the sender. Date: 06/05/2026",
+      "sender": "REDACTED",
+      "recipientName": "REDACTED",
+      "recipientAddress": "REDACTED",
+      "pickupStationTelephoneNumber": "0000000000",
+      "pickupDate": "2026-04-21T00:00:00",
+      "deliveryDate": "2026-05-06T00:00:00",
+      "expectedDeliveryDate": "2026-05-18T00:00:00",
+      "shipmentStatusId": 7,
+      "isDelivered": true,
+      "isReturned": true,
+      "specialFeatures": "compact branch-details-pickup branch-details-dest",
+      "statusHistory": [
+        {"controlPid": 100, "trackingNumber": "TEST_CODE", "controlPointDate": "2026-04-21T00:00:00", "description": "", "controlPoint": "Παραλαβή αποστολής", "info": "REDACTED", "controlPointCode": "", "controlPointFeature": ""},
+        {"controlPid": 200, "trackingNumber": "TEST_CODE", "controlPointDate": "2026-05-06T05:30:45.017", "description": "", "controlPoint": "Στο κέντρο διαλογής", "info": "", "controlPointCode": "", "controlPointFeature": ""},
+        {"controlPid": 201, "trackingNumber": "TEST_CODE", "controlPointDate": "2026-04-21T00:00:00", "description": "", "controlPoint": "Στο κέντρο διαλογής", "info": "", "controlPointCode": "", "controlPointFeature": "", "controlParentPid": 200},
+        {"controlPid": 202, "trackingNumber": "TEST_CODE", "controlPointDate": "2026-04-22T00:00:00", "description": "", "controlPoint": "Στο κέντρο διαλογής", "info": "", "controlPointCode": "", "controlPointFeature": "", "controlParentPid": 200},
+        {"controlPid": 203, "trackingNumber": "TEST_CODE", "controlPointDate": "2026-05-05T00:00:00", "description": "", "controlPoint": "Στο κέντρο διαλογής", "info": "", "controlPointCode": "", "controlPointFeature": "", "controlParentPid": 200},
+        {"controlPid": 300, "trackingNumber": "TEST_CODE", "controlPointDate": "2026-04-22T06:01:27", "description": "", "controlPoint": "Στο αρμόδιο κατάστημα παράδοσης", "info": "", "controlPointCode": "", "controlPointFeature": "branch-details"},
+        {"controlPid": 306, "trackingNumber": "TEST_CODE", "controlPointDate": "2026-05-05T10:48:16.23", "description": "", "controlPoint": "Επίλυση εκκρεμότητας", "info": "Προστέθηκαν οδηγίες επίλυσης", "controlPointCode": "", "controlPointFeature": "", "controlParentPid": 300},
+        {"controlPid": 620, "trackingNumber": "TEST_CODE", "controlPointDate": "2026-05-06T00:00:00", "description": "", "controlPoint": "Επιστράφηκε στον αποστολέα", "info": "", "controlPointCode": "", "controlPointFeature": ""}
+      ],
+      "progressStatus": []
+    }
+  ]
+}
