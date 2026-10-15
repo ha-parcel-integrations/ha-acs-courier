@@ -71,10 +71,10 @@ you act in one of these areas:
   home and stays in `raw` only — it is not warned about. `pickup_point` is still
   pending: a real recipient-collection parcel has not been seen to show which
   field carries it. Weight and dimensions are not exposed.
-- **The `Origin` header is mandatory.** The API answers a request from an
-  unrecognised origin with a `404` that looks exactly like a genuine miss, so
-  without it every lookup silently reports "not found". Confirmed live against a
-  real parcel.
+- **The request's required headers are not optional decoration.** Dropping one
+  can turn every lookup into a silent "not found" — which is why `api.py` sets
+  them explicitly and the tests assert them. What each one is for is in
+  `carrier-research/acs-greece/api/`.
 - **Lookups are sequential**: rate behaviour is unknown. An authorization
   failure is retried once, then lookups pause and a generic error surfaces.
 - **Diagnostics** redact personal, address, phone, free-text and event-location

@@ -70,7 +70,7 @@ async def test_returns_first_item_and_sends_header_pair():
     assert url.endswith(f"/api/parcels/search/{CODE}")
     assert headers["X-Encrypted-Key"] == TOKEN_ONE
     assert headers["X-Country"] == "GR"
-    # The API answers 404 for an unrecognised Origin, so it is mandatory.
+    # Mandatory: without it every lookup reports a false "not found".
     assert headers["Origin"] == "https://www.acscourier.net"
 
 
