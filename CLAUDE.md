@@ -101,26 +101,12 @@ decisions. Changes apply without a restart. Two models, **do not mix them**:
 
 ## Auth models
 
-Three `--auth` builds, one axis: **what the config flow asks for and
-validates**, not how tracking works. `none` and `byo-key` both key tracking on
-codes the user types in (`Parcels`/`Settings` options, `track_parcel` /
-`untrack_parcel` services, the account-less coordinator and its full-stop /
-delivered-skip behaviour below) — `byo-key` only adds a required key field
-validated against the carrier's **official** API at setup, `CONF_API_KEY` in
-`entry.data`, and a reauth flow for when the key is rotated or revoked outside
-Home Assistant (`ACSCourierAuthError` from any per-parcel fetch raises
-`ConfigEntryAuthFailed` for the whole poll — one credential covers every
-tracked code, so a rejected key is never treated as one parcel's problem).
-`credentials` is the only one that changes the *tracking* model too (an
-account feed, not user-entered codes) — see the split above.
-
-Reach for `byo-key` only when carrier-research has already established that
-the carrier's *unauthenticated/consumer* surface is unusable (bot-walled,
-requires a session a script can't hold) and that the *official* developer key
-is reachable by a private individual — `key_access: consumer` in the research
-doc's front matter, not `business`. A `business`-gated key is a wall, not a
-BYO key, whatever the portal's own copy claims (see
-`carrier-research/CLAUDE.md`'s "Standing rulings").
+This repo is the keyless build: the config flow asks for nothing but the
+tracking codes themselves, there is no credential to store, and there is no
+reauth flow. The template's other two builds (`--auth byo-key`, which adds a
+user-supplied API key, and `--auth credentials`, which replaces user-entered
+codes with an account feed) do not apply here — see `ha-carrier-template` if
+you ever need them.
 
 ## Incoming and outgoing parcels
 
