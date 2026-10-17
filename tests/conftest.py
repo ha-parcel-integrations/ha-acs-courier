@@ -31,13 +31,10 @@ def synthetic_status_ids(monkeypatch):
     from custom_components.acs_courier import parcels
     from custom_components.acs_courier.const import ParcelStatus
 
-    from .payloads import SYNTHETIC_DELIVERED_ID, SYNTHETIC_OFD_ID
+    from .payloads import SYNTHETIC_OFD_ID
 
     monkeypatch.setitem(
         parcels._STATUS_MAP, SYNTHETIC_OFD_ID, ParcelStatus.OUT_FOR_DELIVERY
-    )
-    monkeypatch.setitem(
-        parcels._STATUS_MAP, SYNTHETIC_DELIVERED_ID, ParcelStatus.DELIVERED
     )
     yield
 

@@ -9,10 +9,11 @@ CODE = "TEST_CODE"
 ACTIVE_CODE = "TEST_ACTIVE"
 DELIVERED_CODE = "TEST_DELIVERED"
 
-# Ids that do not occur on real parcels. conftest maps them for the tests that
-# need a delivered or out-for-delivery parcel, which no capture has shown yet.
+# ``4`` is the real delivered id, confirmed on captured parcels. Out for
+# delivery has no observed id yet, so conftest maps this synthetic one for the
+# tests that need such a parcel.
 SYNTHETIC_OFD_ID = 998
-SYNTHETIC_DELIVERED_ID = 999
+DELIVERED_ID = 4
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "returned_to_sender.json"
 
@@ -87,7 +88,7 @@ def out_for_delivery_sample(code: str = ACTIVE_CODE) -> dict:
 
 
 def delivered_sample(code: str = DELIVERED_CODE) -> dict:
-    """A synthetic delivered parcel (id mapped only inside tests)."""
-    item = in_progress_item(code, SYNTHETIC_DELIVERED_ID)
+    """A delivered parcel, on the carrier's own delivered id."""
+    item = in_progress_item(code, DELIVERED_ID)
     item["deliveryDate"] = "2026-04-29T13:12:42"
     return item

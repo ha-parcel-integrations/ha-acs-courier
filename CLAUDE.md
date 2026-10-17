@@ -45,11 +45,22 @@ you act in one of these areas:
 
 ## Carrier-specific notes
 
-- **Pre-1.0 (0.9.0).** Only a terminal returned-to-sender parcel has been
-  seen, so only that outcome is mapped. Everything else falls back to the newest
-  mappable history event, then `unknown` with a one-shot WARNING and issue link.
-  Never trust the carrier's own delivered flag on its own: it is also set when a
-  parcel goes back to the sender.
+- **Pre-1.0.** Delivery (`shipmentStatusId` 4, `controlPid` 600) and
+  return-to-sender (7 / 620) are both confirmed on real parcels. What is still
+  unseen is a parcel captured *before* it finished, so no in-transit or
+  out-for-delivery id is mapped; those fall back to the newest mappable history
+  event, then `unknown` with a one-shot WARNING and issue link. Never trust the
+  carrier's own delivered flag on its own: it is also set when a parcel goes
+  back to the sender.
+- **`controlPid` 400 is two states under one code** — "with a courier for
+  delivery" and "in an ACS Smartpoint locker" — separated only by the Greek
+  label, and it frequently arrives with a null `controlPointDate`, which drops
+  it before it can be read at all. So it stays unmapped and keeps warning;
+  mapping it from the label would be wrong on roughly half the parcels seen and
+  silently unreachable on the other half. Settling it needs an in-flight
+  capture, which is what issues #1 and #2 ask for. `404` is the notification
+  ACS sent *about* a delivery, so it is neutral rather than a second delivery
+  signal.
 - **`returning` is not `delivered`**, so a returned parcel keeps being polled at
   the mid tier.
 - **History is sorted by event time, not wire order.** A date-only event can

@@ -42,20 +42,29 @@ CARRIER_TIMEZONE = "Europe/Athens"
 # Item-level ``shipmentStatusId``. Only values seen on a real parcel are
 # mapped; the rest fall back to the newest mappable event, then ``unknown``.
 _STATUS_MAP: dict[int, ParcelStatus] = {
+    4: ParcelStatus.DELIVERED,
     7: ParcelStatus.RETURNING,
 }
 
 # History ``controlPid`` values. Children (``controlParentPid``) inherit their
 # parent's meaning unless listed themselves.
+#
+# 400 is deliberately absent: the same code carries both "with a courier for
+# delivery" and "in an ACS Smartpoint locker", told apart only by the Greek
+# label, and it arrives without a ``controlPointDate`` often enough to be
+# dropped before it is read. Mapping it either way would be wrong about half
+# the time, so it keeps warning until an in-flight parcel settles it.
 _EVENT_MAP: dict[int, ParcelStatus] = {
     100: ParcelStatus.IN_TRANSIT,
     200: ParcelStatus.IN_TRANSIT,
     300: ParcelStatus.IN_TRANSIT,
+    600: ParcelStatus.DELIVERED,
     620: ParcelStatus.RETURNING,
 }
 
-# Seen events that say nothing about where the parcel is in its journey.
-_NEUTRAL_EVENTS = frozenset({306})
+# Seen events that say nothing about where the parcel is in its journey. 404 is
+# the notification ACS sent about a delivery, not the delivery itself.
+_NEUTRAL_EVENTS = frozenset({306, 404})
 
 # Codes we have already warned about, so each unmapped one is logged
 # only once per HA session instead of on every poll.

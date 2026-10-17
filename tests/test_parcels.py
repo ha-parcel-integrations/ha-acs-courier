@@ -67,6 +67,48 @@ def test_status_7_is_returning_even_though_is_delivered_is_true():
     assert parcel["delivered_at"] is None
 
 
+def test_status_4_is_delivered():
+    """The id a delivered parcel actually carries."""
+    raw = in_progress_item(status_id=4)
+    parcel = normalize_parcel(raw)
+    assert parcel["status"] is ParcelStatus.DELIVERED
+    assert parcel["delivered"] is True
+
+
+def test_delivery_event_is_delivered_without_the_item_id(caplog):
+    """A parcel whose id is unknown still reads delivered from its last scan."""
+    raw = in_progress_item()
+    raw["statusHistory"].append(event(600, "2026-04-22T09:00:00", "Παραδόθηκε"))
+    with caplog.at_level(logging.WARNING):
+        parcel = normalize_parcel(raw)
+    assert parcel["status"] is ParcelStatus.DELIVERED
+    assert parcel["raw_status"] == "Παραδόθηκε"
+    assert not [r for r in caplog.records if "controlPid=600" in r.getMessage()]
+
+
+def test_delivery_notification_event_is_neutral(caplog):
+    """404 is ACS telling the recipient about a delivery, not the delivery."""
+    with caplog.at_level(logging.WARNING):
+        assert map_event_status(event(404, "2026-01-01", parent=400)) is None
+    assert not caplog.records
+
+
+def test_handover_event_stays_unmapped_and_warns(caplog):
+    """400 means both "with a courier" and "in a locker"; neither is assumed."""
+    with caplog.at_level(logging.WARNING):
+        assert (
+            map_event_status(event(400, "2026-01-01", "Σε διανομέα προς παράδοση"))
+            is None
+        )
+        assert (
+            map_event_status(
+                event(400, "2026-01-01", "Σε θυρίδα ACS Smartpoint Locker")
+            )
+            is None
+        )
+    assert len([r for r in caplog.records if "controlPid=400" in r.getMessage()]) == 1
+
+
 def test_missing_status_id_is_unknown_without_warning(caplog):
     with caplog.at_level(logging.WARNING):
         assert map_parcel_status(None) is ParcelStatus.UNKNOWN
