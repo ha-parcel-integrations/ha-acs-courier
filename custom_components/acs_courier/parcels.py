@@ -38,6 +38,8 @@ NEW_ISSUE_URL = (
 # The carrier's tracking-point times carry no offset. ACS is a Greek domestic
 # carrier (GR/CY, both EET/EEST), so a naive time is Athens local time.
 CARRIER_TIMEZONE = "Europe/Athens"
+# Built once at import: constructing a ZoneInfo reads the tz file from disk.
+_CARRIER_TZ = ZoneInfo(CARRIER_TIMEZONE)
 
 # Item-level ``shipmentStatusId``. Only values seen on a real parcel are
 # mapped; the rest fall back to the newest mappable event, then ``unknown``.
@@ -149,7 +151,7 @@ def _carrier_datetime(value: Any) -> datetime | None:
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=ZoneInfo(CARRIER_TIMEZONE))
+        parsed = parsed.replace(tzinfo=_CARRIER_TZ)
     return parsed
 
 
