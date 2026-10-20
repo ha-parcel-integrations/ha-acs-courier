@@ -4,11 +4,12 @@ Pure-function tests for the tiering/scheduling helpers, plus a few
 integration checks that ``_async_update_data`` actually wires them up (the
 full-stop condition, its resume, and the 429 backoff).
 """
-from datetime import datetime, timedelta, timezone
+
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 
-import pytest
 from homeassistant.helpers.update_coordinator import UpdateFailed
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.acs_courier.api import ACSCourierApiError
@@ -32,8 +33,6 @@ from custom_components.acs_courier.coordinator import (
 )
 
 from .payloads import ACTIVE_CODE, out_for_delivery_sample
-
-UTC = timezone.utc
 
 
 def _out_for_delivery(planned_from: str | None) -> dict:
@@ -184,7 +183,8 @@ async def test_update_interval_resumes_once_a_parcel_is_added(hass):
     assert coordinator.update_interval is None
 
     hass.config_entries.async_update_entry(
-        entry, options={**entry.options, CONF_PARCELS: [{CONF_TRACKING_CODE: ACTIVE_CODE}]}
+        entry,
+        options={**entry.options, CONF_PARCELS: [{CONF_TRACKING_CODE: ACTIVE_CODE}]},
     )
     client.async_get_parcel.return_value = out_for_delivery_sample()
     await coordinator._async_update_data()

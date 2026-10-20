@@ -1,4 +1,5 @@
 """Tests for the ACS Courier API client."""
+
 import json
 import time
 from unittest.mock import AsyncMock, MagicMock
@@ -6,10 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import aiohttp
 import pytest
 
-from custom_components.acs_courier.api import (
-    ACSCourierApiClient,
-    ACSCourierApiError,
-)
+from custom_components.acs_courier.api import ACSCourierApiClient, ACSCourierApiError
 from custom_components.acs_courier.const import TRACKING_PAGE_URL
 
 from .payloads import CODE, envelope, not_found_envelope, returned_item
@@ -43,9 +41,14 @@ class FakeSession:
         else:
             status, body, content_type, *extra = self.lookups.pop(0)
             response.status = status
-            response.headers = {"Content-Type": content_type, **(extra[0] if extra else {})}
+            response.headers = {
+                "Content-Type": content_type,
+                **(extra[0] if extra else {}),
+            }
             if isinstance(body, str):
-                response.json = AsyncMock(side_effect=json.JSONDecodeError("x", body, 0))
+                response.json = AsyncMock(
+                    side_effect=json.JSONDecodeError("x", body, 0)
+                )
             else:
                 response.json = AsyncMock(return_value=body)
         ctx = MagicMock()
@@ -58,7 +61,11 @@ class FakeSession:
 
 
 def _ok(body=None):
-    return (200, body if body is not None else envelope(returned_item()), "application/json")
+    return (
+        200,
+        body if body is not None else envelope(returned_item()),
+        "application/json",
+    )
 
 
 async def test_returns_first_item_and_sends_header_pair():
@@ -119,7 +126,13 @@ async def test_empty_items_is_none():
 
 @pytest.mark.parametrize(
     "body",
-    [{"count": 1}, {"items": "x"}, ["not", "a", "dict"], {"items": ["junk"]}, "not json"],
+    [
+        {"count": 1},
+        {"items": "x"},
+        ["not", "a", "dict"],
+        {"items": ["junk"]},
+        "not json",
+    ],
 )
 async def test_malformed_bodies_are_errors(body):
     session = FakeSession([(200, body, "application/json")])
@@ -142,7 +155,9 @@ async def test_429_carries_retry_after():
     assert err.value.retry_after == 120.0
 
 
-@pytest.mark.parametrize("header", [{}, {"Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"}])
+@pytest.mark.parametrize(
+    "header", [{}, {"Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"}]
+)
 async def test_429_without_usable_retry_after(header):
     session = FakeSession([(429, None, "", header)])
     with pytest.raises(ACSCourierApiError) as err:

@@ -1,4 +1,5 @@
 """Constants for the ACS Courier parcel tracker integration."""
+
 from enum import StrEnum
 
 from homeassistant.const import Platform
@@ -16,14 +17,14 @@ class ParcelStatus(StrEnum):
     roughly the order a parcel moves through.
     """
 
-    REGISTERED = "registered"               # Sender announced the parcel; not handed over yet
-    IN_TRANSIT = "in_transit"               # In the carrier's network
-    OUT_FOR_DELIVERY = "out_for_delivery"   # On a delivery vehicle today
-    AT_PICKUP_POINT = "at_pickup_point"     # Ready to collect at a pickup location
-    DELIVERED = "delivered"                 # Handed over
-    RETURNING = "returning"                 # Failed delivery, going back to sender
-    PROBLEM = "problem"                     # Carrier reports an exception/issue
-    UNKNOWN = "unknown"                     # Raw status we have not mapped yet
+    REGISTERED = "registered"  # Sender announced the parcel; not handed over yet
+    IN_TRANSIT = "in_transit"  # In the carrier's network
+    OUT_FOR_DELIVERY = "out_for_delivery"  # On a delivery vehicle today
+    AT_PICKUP_POINT = "at_pickup_point"  # Ready to collect at a pickup location
+    DELIVERED = "delivered"  # Handed over
+    RETURNING = "returning"  # Failed delivery, going back to sender
+    PROBLEM = "problem"  # Carrier reports an exception/issue
+    UNKNOWN = "unknown"  # Raw status we have not mapped yet
 
 
 PLATFORMS = [Platform.BUTTON, Platform.CALENDAR, Platform.SENSOR]
@@ -72,7 +73,9 @@ PENDING_CAPABILITIES: frozenset[str] = frozenset({"pickup_point"})
 # unknown code answers HTTP 200 with a single item whose ``notes`` is
 # ``NOT_FOUND_NOTE``, or a JSON 404 problem response.
 TRACKING_API_URL = "https://api.acscourier.net/api/parcels/search/{tracking_code}"
-TRACKING_PAGE_URL = "https://www.acscourier.net/en/quick-access/non-registered-users/track-and-trace/"
+TRACKING_PAGE_URL = (
+    "https://www.acscourier.net/en/quick-access/non-registered-users/track-and-trace/"
+)
 # The API rejects a request whose Origin it does not recognise with a 404 —
 # indistinguishable from a genuine miss — so the site origin is mandatory.
 SITE_ORIGIN = "https://www.acscourier.net"

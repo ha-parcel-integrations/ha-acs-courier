@@ -1,4 +1,5 @@
 """Tests for the ACS Courier refresh button."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 from custom_components.acs_courier.button import ACSCourierRefreshButton

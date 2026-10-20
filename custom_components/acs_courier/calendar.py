@@ -1,4 +1,5 @@
 """Calendar platform for the ACS Courier parcel tracker integration."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -20,17 +21,20 @@ PARALLEL_UPDATES = 0
 _DEFAULT_EVENT_DURATION = timedelta(hours=1)
 
 
-
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ACSCourierConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the ACS Courier deliveries calendar from a config entry."""
-    async_add_entities([ACSCourierDeliveriesCalendar(entry.runtime_data.coordinator, entry)])
+    async_add_entities(
+        [ACSCourierDeliveriesCalendar(entry.runtime_data.coordinator, entry)]
+    )
 
 
-class ACSCourierDeliveriesCalendar(CoordinatorEntity[ACSCourierCoordinator], CalendarEntity):
+class ACSCourierDeliveriesCalendar(
+    CoordinatorEntity[ACSCourierCoordinator], CalendarEntity
+):
     """A read-only calendar of expected ACS Courier deliveries.
 
     Each active tracked parcel with a known delivery moment becomes an event.
@@ -60,7 +64,9 @@ class ACSCourierDeliveriesCalendar(CoordinatorEntity[ACSCourierCoordinator], Cal
 
             barcode = parcel.get("barcode") or ""
             sender = parcel.get("sender")
-            summary = sender or (f"Parcel {barcode}" if barcode else "ACS Courier parcel")
+            summary = sender or (
+                f"Parcel {barcode}" if barcode else "ACS Courier parcel"
+            )
             description_parts = [
                 f"Barcode: {barcode}" if barcode else None,
                 f"Status: {parcel.get('status')}" if parcel.get("status") else None,

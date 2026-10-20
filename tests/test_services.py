@@ -1,20 +1,16 @@
 """Tests for the ACS Courier services (track_parcel / untrack_parcel)."""
+
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from homeassistant.exceptions import ServiceValidationError
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.acs_courier.const import (
-    CONF_PARCELS,
-    CONF_TRACKING_CODE,
-    DOMAIN,
-)
+from custom_components.acs_courier.const import CONF_PARCELS, CONF_TRACKING_CODE, DOMAIN
 
 from .payloads import active_sample
 
 _SAMPLE = active_sample()
-
 
 
 async def _setup(hass, parcels: list[dict] | None = None) -> MockConfigEntry:
@@ -65,9 +61,7 @@ async def test_track_parcel_normalizes_code(hass):
         )
         await hass.async_block_till_done()
 
-    assert entry.options[CONF_PARCELS] == [
-        {CONF_TRACKING_CODE: "EXAMPLE999999"}
-    ]
+    assert entry.options[CONF_PARCELS] == [{CONF_TRACKING_CODE: "EXAMPLE999999"}]
 
 
 async def test_track_parcel_accepts_any_non_empty_code(hass):
@@ -112,9 +106,7 @@ async def test_track_parcel_duplicate_is_noop(hass):
 
 
 async def test_untrack_parcel_removes_from_options(hass):
-    entry = await _setup(
-        hass, parcels=[{CONF_TRACKING_CODE: "EXAMPLE999999"}]
-    )
+    entry = await _setup(hass, parcels=[{CONF_TRACKING_CODE: "EXAMPLE999999"}])
     with patch(
         "custom_components.acs_courier.api.ACSCourierApiClient.async_get_parcel",
         new=AsyncMock(return_value=_SAMPLE),
@@ -131,9 +123,7 @@ async def test_untrack_parcel_removes_from_options(hass):
 
 
 async def test_untrack_unknown_code_is_noop(hass):
-    entry = await _setup(
-        hass, parcels=[{CONF_TRACKING_CODE: "EXAMPLE999999"}]
-    )
+    entry = await _setup(hass, parcels=[{CONF_TRACKING_CODE: "EXAMPLE999999"}])
     with patch(
         "custom_components.acs_courier.api.ACSCourierApiClient.async_get_parcel",
         new=AsyncMock(return_value=_SAMPLE),

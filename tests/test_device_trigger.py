@@ -1,4 +1,5 @@
 """Tests for ACS Courier device triggers."""
+
 from unittest.mock import AsyncMock
 
 from custom_components.acs_courier.const import DOMAIN

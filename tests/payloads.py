@@ -1,4 +1,5 @@
 """Sample ACS Courier API payloads shared by the test modules."""
+
 from __future__ import annotations
 
 import copy

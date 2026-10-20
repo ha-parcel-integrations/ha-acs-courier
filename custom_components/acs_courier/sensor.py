@@ -1,8 +1,9 @@
 """Sensor platform for the ACS Courier parcel tracker integration."""
+
 from __future__ import annotations
 
-import logging
 from datetime import datetime
+import logging
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -30,7 +31,6 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
 
 
-
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ACSCourierConfigEntry,
@@ -42,9 +42,7 @@ async def async_setup_entry(
     # than (too late) from this forwarded platform.
     coordinator = entry.runtime_data.coordinator
 
-    current_barcodes: set[str] = {
-        p.get("barcode", "") for p in coordinator.data or []
-    }
+    current_barcodes: set[str] = {p.get("barcode", "") for p in coordinator.data or []}
     entry_id = entry.entry_id
 
     # Remove per-parcel sensors from the registry whose barcode is no longer
@@ -66,7 +64,7 @@ async def async_setup_entry(
             and entity_entry.unique_id.startswith(f"{entry_id}_")
             and entity_entry.unique_id not in non_parcel_unique_ids
         ):
-            barcode = entity_entry.unique_id[len(f"{entry_id}_"):]
+            barcode = entity_entry.unique_id[len(f"{entry_id}_") :]
             if barcode not in current_barcodes:
                 registry.async_remove(entity_entry.entity_id)
 
@@ -75,10 +73,10 @@ async def async_setup_entry(
             coordinator, entry, async_add_entities, current_barcodes
         ),
     ]
-    for parcel in coordinator.data or []:
-        entities.append(
-            ACSCourierParcelSensor(coordinator, entry, parcel.get("barcode", ""))
-        )
+    entities.extend(
+        ACSCourierParcelSensor(coordinator, entry, parcel.get("barcode", ""))
+        for parcel in coordinator.data or []
+    )
     entities.append(ACSCourierNextDeliverySensor(coordinator, entry))
     entities.append(ACSCourierEnRouteToPickupPointSensor(coordinator, entry))
     entities.append(ACSCourierAwaitingPickupSensor(coordinator, entry))
@@ -203,9 +201,7 @@ class ACSCourierNextDeliverySensor(
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_attribution = ATTRIBUTION
 
-    def __init__(
-        self, coordinator: ACSCourierCoordinator, entry: ConfigEntry
-    ) -> None:
+    def __init__(self, coordinator: ACSCourierCoordinator, entry: ConfigEntry) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_next_delivery"
@@ -254,9 +250,7 @@ class _ACSCourierPickupListSensor(
     _attr_attribution = ATTRIBUTION
     _unrecorded_attributes = frozenset({"parcels"})
 
-    def __init__(
-        self, coordinator: ACSCourierCoordinator, entry: ConfigEntry
-    ) -> None:
+    def __init__(self, coordinator: ACSCourierCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_{self._suffix}"
         self._attr_device_info = build_device_info(entry)
@@ -278,7 +272,8 @@ class ACSCourierEnRouteToPickupPointSensor(_ACSCourierPickupListSensor):
 
     def _parcels(self) -> list[dict]:
         return [
-            parcel for parcel in (self.coordinator.data or [])
+            parcel
+            for parcel in (self.coordinator.data or [])
             if parcel.get("pickup")
             and parcel.get("status") != ParcelStatus.AT_PICKUP_POINT
         ]
@@ -292,7 +287,8 @@ class ACSCourierAwaitingPickupSensor(_ACSCourierPickupListSensor):
 
     def _parcels(self) -> list[dict]:
         return [
-            parcel for parcel in (self.coordinator.data or [])
+            parcel
+            for parcel in (self.coordinator.data or [])
             if parcel.get("status") == ParcelStatus.AT_PICKUP_POINT
         ]
 
@@ -308,9 +304,7 @@ class ACSCourierDeliveredParcelsSensor(
     _attr_attribution = ATTRIBUTION
     _unrecorded_attributes = frozenset({"parcels"})
 
-    def __init__(
-        self, coordinator: ACSCourierCoordinator, entry: ConfigEntry
-    ) -> None:
+    def __init__(self, coordinator: ACSCourierCoordinator, entry: ConfigEntry) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_delivered_parcels"
@@ -338,9 +332,7 @@ class ACSCourierLastUpdateSensor(
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_attribution = ATTRIBUTION
 
-    def __init__(
-        self, coordinator: ACSCourierCoordinator, entry: ConfigEntry
-    ) -> None:
+    def __init__(self, coordinator: ACSCourierCoordinator, entry: ConfigEntry) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_last_update"

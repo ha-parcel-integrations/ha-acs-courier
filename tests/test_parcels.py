@@ -1,6 +1,7 @@
 """Tests for the pure parcel-mapping helpers."""
+
+from datetime import UTC, datetime, timedelta
 import logging
-from datetime import datetime, timedelta, timezone
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -170,7 +171,10 @@ def test_event_without_pid_is_silently_unmapped(caplog):
 
 def test_children_inherit_parent_but_issue_resolution_does_not(caplog):
     with caplog.at_level(logging.WARNING):
-        assert map_event_status(event(201, "2026-01-01", parent=200)) is ParcelStatus.IN_TRANSIT
+        assert (
+            map_event_status(event(201, "2026-01-01", parent=200))
+            is ParcelStatus.IN_TRANSIT
+        )
         assert map_event_status(event(306, "2026-01-01", parent=300)) is None
     assert not caplog.records
 
@@ -263,7 +267,11 @@ def test_history_entries_use_control_point_text_and_mapped_status():
 def test_history_falls_back_to_description_and_caps():
     raw = {
         "statusHistory": [
-            {"controlPid": 100, "controlPointDate": f"2026-01-{day:02d}T00:00:00", "description": "d"}
+            {
+                "controlPid": 100,
+                "controlPointDate": f"2026-01-{day:02d}T00:00:00",
+                "description": "d",
+            }
             for day in range(1, 5)
         ]
     }
@@ -419,7 +427,7 @@ def _entry(filter_type: str, amount: int) -> MockConfigEntry:
 
 
 def _delivered_pair() -> list[dict]:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return [
         {"barcode": "RECENT", "delivered_at": (now - timedelta(days=1)).isoformat()},
         {"barcode": "OLD", "delivered_at": (now - timedelta(days=30)).isoformat()},
