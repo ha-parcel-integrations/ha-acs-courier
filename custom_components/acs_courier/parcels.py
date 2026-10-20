@@ -187,14 +187,19 @@ def build_history(
     ``raw``) so it survives the aggregator's ``strip_raw()``, capped to the
     most recent ``max_events``.
     """
-    return [
-        {
-            "timestamp": _carrier_datetime(event.get("controlPointDate")).isoformat(),
-            "status": map_event_status(event),
-            "raw_status": _event_text(event),
-        }
-        for event in events
-    ][-max_events:]
+    history = []
+    for event in events:
+        moment = _carrier_datetime(event.get("controlPointDate"))
+        if moment is None:
+            continue
+        history.append(
+            {
+                "timestamp": moment.isoformat(),
+                "status": map_event_status(event),
+                "raw_status": _event_text(event),
+            }
+        )
+    return history[-max_events:]
 
 
 def normalize_parcel(raw: dict, *, include_history: bool = False) -> dict:
