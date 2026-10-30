@@ -121,7 +121,9 @@ Standard HA removal applies: **Settings → Devices & Services → ACS Courier �
 | `sensor.acs_courier_incoming_parcels` | Number of active tracked parcels, full list under the `parcels` attribute |
 | `sensor.acs_courier_parcel_<code>` | One per tracked parcel; state is the canonical status, attributes carry the full normalised parcel |
 | `sensor.acs_courier_next_delivery` | Earliest expected delivery moment across all active parcels |
+| `sensor.acs_courier_awaiting_pickup` | Incoming parcels that are ready to collect at a pickup point |
 | `sensor.acs_courier_delivered_parcels` | Recently delivered parcels (see the retention option) |
+| `calendar.acs_courier_deliveries` | Read-only calendar of expected deliveries, no extra API calls |
 | `sensor.acs_courier_last_successful_update` | Diagnostic: when ACS Courier was last polled successfully |
 
 A delivered parcel moves from its per-parcel sensor to the delivered sensor automatically.
@@ -184,7 +186,7 @@ logger:
 ## Troubleshooting
 
 - **A parcel shows `unknown`** — ACS Courier has no record of the code yet, or the code is wrong. It will pick up automatically once scanned.
-- **A status logs "Unrecognised ACS Courier status"** — please [open an issue](https://github.com/ha-parcel-integrations/ha-acs-courier/issues/new) with the logged line so the mapping can be extended.
+- **A status logs "Unrecognised ACS Courier status"** — please [open an issue](https://github.com/ha-parcel-integrations/ha-acs-courier/issues/new?template=unrecognised_status.yml) with the logged line so the mapping can be extended.
 
 ## Related integrations
 
