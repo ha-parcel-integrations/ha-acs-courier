@@ -119,9 +119,15 @@ async def test_options_update_applies_live_without_reload(hass):
     entry.add_to_hass(hass)
 
     mock = AsyncMock(return_value=_sample())
-    with patch(
-        "custom_components.acs_courier.api.ACSCourierApiClient.async_get_parcel",
-        new=mock,
+    with (
+        patch(
+            "custom_components.acs_courier.api.ACSCourierApiClient.async_get_parcel",
+            new=mock,
+        ),
+        patch(
+            "custom_components.acs_courier.api.ACSCourierApiClient._async_search",
+            new=AsyncMock(return_value=[]),
+        ),
     ):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()

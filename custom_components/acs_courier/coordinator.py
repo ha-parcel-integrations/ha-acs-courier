@@ -18,7 +18,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from .api import ACSCourierApiClient, ACSCourierApiError
+from .api import BATCH_SIZE, ACSCourierApiClient, ACSCourierApiError
 from .const import (
     CONF_INCLUDE_HISTORY,
     CONF_PARCELS,
@@ -254,13 +254,17 @@ class ACSCourierCoordinator(DataUpdateCoordinator[list[dict]]):
         # stays untouched until the user removes it by hand.
         codes_to_fetch = [code for code in codes if code not in self._delivered_codes]
 
-        # Rate behaviour is unknown: never issue concurrent lookups.
+        # Rate behaviour is unknown: never issue concurrent lookups, and ask
+        # for several codes per lookup.
         results: list[dict | Exception | None] = []
-        for code in codes_to_fetch:
+        for start in range(0, len(codes_to_fetch), BATCH_SIZE):
+            batch = codes_to_fetch[start : start + BATCH_SIZE]
             try:
-                results.append(await self._client.async_get_parcel(code))
+                found = await self._client.async_get_parcels(batch)
             except Exception as err:  # noqa: BLE001 - classified below
-                results.append(err)
+                results.extend(err for _ in batch)
+            else:
+                results.extend(found.get(code) for code in batch)
 
         raws_by_code: dict[str, dict] = {}
         errors = 0

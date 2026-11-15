@@ -165,7 +165,7 @@ async def test_429_without_usable_retry_after(header):
     assert err.value.retry_after is None
 
 
-@pytest.mark.parametrize("status", [401, 403])
+@pytest.mark.parametrize("status", [401, 403, 406])
 async def test_auth_failure_refreshes_the_token_once_then_succeeds(status):
     session = FakeSession(
         [(status, None, ""), _ok()], pages=[_page(TOKEN_ONE), _page(TOKEN_TWO)]
@@ -226,3 +226,33 @@ async def test_propagates_network_error():
     session.get = MagicMock(side_effect=aiohttp.ClientError("boom"))
     with pytest.raises(aiohttp.ClientError):
         await ACSCourierApiClient(session).async_get_parcel(CODE)
+
+
+async def test_batch_asks_for_every_code_in_one_lookup():
+    other = "1234567890"
+    session = FakeSession(
+        [_ok({"count": 2, "items": [returned_item(other), returned_item()]})]
+    )
+    parcels = await ACSCourierApiClient(session).async_get_parcels([CODE, other])
+
+    assert parcels[CODE]["trackingNumber"] == CODE
+    assert parcels[other]["trackingNumber"] == other
+    ((url, _),) = session.lookup_requests()
+    assert url.endswith(f"/api/parcels/search/{CODE},{other}")
+
+
+async def test_batch_looks_up_a_dropped_code_on_its_own():
+    other = "1234567890"
+    session = FakeSession([_ok(envelope(returned_item())), _ok(not_found_envelope())])
+    parcels = await ACSCourierApiClient(session).async_get_parcels([CODE, other])
+
+    assert parcels[CODE] is not None
+    assert parcels[other] is None
+    assert session.lookup_requests()[1][0].endswith(f"/search/{other}")
+
+
+async def test_batch_of_one_is_a_single_lookup():
+    session = FakeSession([_ok()])
+    parcels = await ACSCourierApiClient(session).async_get_parcels([CODE])
+    assert parcels[CODE] is not None
+    assert len(session.lookup_requests()) == 1

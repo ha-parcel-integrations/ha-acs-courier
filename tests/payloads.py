@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 CODE = "TEST_CODE"
 ACTIVE_CODE = "TEST_ACTIVE"
@@ -93,3 +94,14 @@ def delivered_sample(code: str = DELIVERED_CODE) -> dict:
     item = in_progress_item(code, DELIVERED_ID)
     item["deliveryDate"] = "2026-04-29T13:12:42"
     return item
+
+
+def batch_client() -> AsyncMock:
+    """A client mock whose batch lookup asks async_get_parcel per code."""
+    client = AsyncMock()
+
+    async def batch(codes):
+        return {code: await client.async_get_parcel(code) for code in codes}
+
+    client.async_get_parcels.side_effect = batch
+    return client

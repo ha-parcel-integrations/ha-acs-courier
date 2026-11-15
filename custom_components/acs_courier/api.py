@@ -23,7 +23,10 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 _TOKEN_PATTERN = re.compile(r"""publictoken\s*=\s*["']([^"']+)["']""", re.IGNORECASE)
-_AUTH_STATUSES = (401, 403)
+# 406 is an expired or missing key; 401/403 a refused one.
+_AUTH_STATUSES = (401, 403, 406)
+# One lookup takes up to this many comma-separated codes.
+BATCH_SIZE = 10
 
 
 class ACSCourierApiError(Exception):
@@ -111,10 +114,38 @@ class ACSCourierApiClient:
         unknown. Any other failure raises :class:`ACSCourierApiError`; network
         errors propagate as ``aiohttp.ClientError``.
         """
+        items = await self._async_search([tracking_code])
+        return items[0] if items else None
+
+    async def async_get_parcels(
+        self, tracking_codes: list[str]
+    ) -> dict[str, dict[str, Any] | None]:
+        """Fetch up to :data:`BATCH_SIZE` parcels with one lookup.
+
+        A code the answer leaves out is looked up on its own, so a parcel is
+        never reported unknown only because the batch dropped it.
+        """
+        if len(tracking_codes) == 1:
+            code = tracking_codes[0]
+            return {code: await self.async_get_parcel(code)}
+        found = {
+            str(item.get("trackingNumber")): item
+            for item in await self._async_search(tracking_codes)
+        }
+        results: dict[str, dict[str, Any] | None] = {}
+        for code in tracking_codes:
+            results[code] = (
+                found[code] if code in found else await self.async_get_parcel(code)
+            )
+        return results
+
+    async def _async_search(self, tracking_codes: list[str]) -> list[dict[str, Any]]:
+        """Return the known parcels among ``tracking_codes``, one lookup."""
         if time.monotonic() < self._blocked_until:
             raise ACSCourierApiError("authorization failed", status_code=401)
 
-        url = TRACKING_API_URL.format(tracking_code=quote(tracking_code, safe=""))
+        joined = ",".join(quote(code, safe="") for code in tracking_codes)
+        url = TRACKING_API_URL.format(tracking_code=joined)
         token = await self._async_session_token()
         status, payload, content_type = await self._async_request(url, token)
         if status in _AUTH_STATUSES:
@@ -128,7 +159,7 @@ class ACSCourierApiClient:
                 raise ACSCourierApiError("authorization failed", status_code=status)
 
         if status == 404 and "json" in content_type.lower():
-            return None
+            return []
         if status != 200:
             raise ACSCourierApiError(f"HTTP {status}", status_code=status)
         if not isinstance(payload, dict):
@@ -136,11 +167,10 @@ class ACSCourierApiClient:
         items = payload.get("items")
         if not isinstance(items, list):
             raise ACSCourierApiError("response carried no items list")
-        if not items:
-            return None
-        item = items[0]
-        if not isinstance(item, dict):
-            raise ACSCourierApiError("unexpected item (not a JSON object)")
-        if item.get("notes") == NOT_FOUND_NOTE:
-            return None
-        return item
+        known = []
+        for item in items:
+            if not isinstance(item, dict):
+                raise ACSCourierApiError("unexpected item (not a JSON object)")
+            if item.get("notes") != NOT_FOUND_NOTE:
+                known.append(item)
+        return known

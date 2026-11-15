@@ -86,8 +86,13 @@ you act in one of these areas:
   can turn every lookup into a silent "not found" — which is why `api.py` sets
   them explicitly and the tests assert them. What each one is for is in
   `carrier-research/acs-greece/api/`.
-- **Lookups are sequential**: rate behaviour is unknown. An authorization
-  failure is retried once, then lookups pause and a generic error surfaces.
+- **Lookups are sequential and batched**: rate behaviour is unknown, so one
+  lookup carries up to `BATCH_SIZE` (10) comma-separated codes and lookups
+  never run concurrently. A code the batch answer leaves out is looked up on
+  its own, so it is never reported unknown only because the batch dropped it.
+  A failed batch keeps each of its parcels' cached data. An authorization
+  failure (401/403, or 406 for an expired key) refreshes the key and is
+  retried once, then lookups pause and a generic error surfaces.
 - **Diagnostics** redact personal, address, phone, free-text and event-location
   fields; `raw` always carries the full record.
 - **Outgoing parcels are not built** (not in the plan); add the user-declared

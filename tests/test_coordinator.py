@@ -4,7 +4,6 @@ The parcel mapping itself is covered by ``test_parcels.py``.
 """
 
 import asyncio
-from unittest.mock import AsyncMock
 
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -27,6 +26,7 @@ from .payloads import (
     ACTIVE_CODE,
     DELIVERED_CODE,
     active_sample,
+    batch_client,
     delivered_sample,
     out_for_delivery_sample,
 )
@@ -75,7 +75,7 @@ async def test_update_merges_multiple_parcels(hass):
         [{CONF_TRACKING_CODE: ACTIVE_CODE}, {CONF_TRACKING_CODE: DELIVERED_CODE}]
     )
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.side_effect = lambda code: (
         active_sample() if code == ACTIVE_CODE else delivered_sample()
     )
@@ -92,7 +92,7 @@ async def test_update_merges_multiple_parcels(hass):
 async def test_update_not_found_shows_pending_placeholder(hass):
     entry = _entry_with([{CONF_TRACKING_CODE: OTHER_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.return_value = None  # not found
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
@@ -106,7 +106,7 @@ async def test_update_not_found_shows_pending_placeholder(hass):
 async def test_update_keeps_cached_payload_on_error(hass):
     entry = _entry_with([{CONF_TRACKING_CODE: DELIVERED_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.return_value = delivered_sample()
     coordinator = ACSCourierCoordinator(hass, client, entry)
     await coordinator._async_update_data()  # populates the cache
@@ -119,7 +119,7 @@ async def test_update_keeps_cached_payload_on_error(hass):
 async def test_update_raises_when_every_parcel_fails(hass):
     entry = _entry_with([{CONF_TRACKING_CODE: DELIVERED_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.side_effect = ACSCourierApiError("HTTP 500")
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
@@ -131,7 +131,7 @@ async def test_update_reraises_unexpected_exceptions(hass):
     """Only API and network errors are tolerated; a bug must not be swallowed."""
     entry = _entry_with([{CONF_TRACKING_CODE: DELIVERED_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.side_effect = ValueError("boom")
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
@@ -144,7 +144,7 @@ async def test_update_skips_items_missing_a_tracking_code(hass):
         [{CONF_TRACKING_CODE: ""}, {CONF_TRACKING_CODE: DELIVERED_CODE}]
     )
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.return_value = delivered_sample()
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
@@ -158,7 +158,7 @@ async def test_update_backfills_missing_tracking_number(hass):
     entry.add_to_hass(hass)
     sample = active_sample()
     del sample["trackingNumber"]
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.return_value = sample
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
@@ -169,7 +169,7 @@ async def test_update_backfills_missing_tracking_number(hass):
 async def test_update_prunes_cache_for_untracked_parcels(hass):
     entry = _entry_with([{CONF_TRACKING_CODE: DELIVERED_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.return_value = delivered_sample()
     coordinator = ACSCourierCoordinator(hass, client, entry)
     coordinator._raw_cache["GONE"] = {"trackingNumber": "GONE"}
@@ -186,7 +186,7 @@ async def test_delivered_code_skipped_from_fetch(hass):
         [{CONF_TRACKING_CODE: ACTIVE_CODE}, {CONF_TRACKING_CODE: DELIVERED_CODE}]
     )
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.side_effect = lambda code: (
         active_sample(code) if code == ACTIVE_CODE else delivered_sample()
     )
@@ -210,7 +210,7 @@ async def test_delivered_code_forgotten_when_untracked(hass):
     """Untracking a delivered code drops it from the skip set too."""
     entry = _entry_with([{CONF_TRACKING_CODE: DELIVERED_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.return_value = delivered_sample()
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
@@ -239,7 +239,7 @@ async def test_update_fetches_parcels_sequentially(hass):
         in_flight -= 1
         return active_sample(code)
 
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.side_effect = _slow_fetch
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
@@ -254,7 +254,7 @@ async def test_cache_only_poll_does_not_stamp_last_success(hass):
     # by test_delivered_code_skipped_from_fetch.
     entry = _entry_with([{CONF_TRACKING_CODE: ACTIVE_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.return_value = active_sample(ACTIVE_CODE)
     coordinator = ACSCourierCoordinator(hass, client, entry)
     await coordinator._async_update_data()
@@ -275,7 +275,7 @@ async def test_first_refresh_fires_nothing(hass):
     """Otherwise every restart floods the user with "registered" events."""
     entry = _entry_with([{CONF_TRACKING_CODE: ACTIVE_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.return_value = active_sample()
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
@@ -301,7 +301,7 @@ async def test_event_carries_device_id(hass):
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.entry_id)},
     )
-    client = AsyncMock()
+    client = batch_client()
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
     events = []
@@ -319,7 +319,7 @@ async def test_event_carries_device_id(hass):
 async def test_fires_status_changed_event(hass):
     entry = _entry_with([{CONF_TRACKING_CODE: ACTIVE_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
     events = []
@@ -341,7 +341,7 @@ async def test_delivery_fires_delivered_event_and_not_status_changed(hass):
     """The hop to delivered fires exactly one, dedicated event."""
     entry = _entry_with([{CONF_TRACKING_CODE: ACTIVE_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
     delivered = []
@@ -367,7 +367,7 @@ async def test_no_events_for_parcel_first_seen_delivered(hass):
     """A parcel already delivered when first tracked fires nothing at all."""
     entry = _entry_with([{CONF_TRACKING_CODE: ACTIVE_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.side_effect = lambda code: (
         active_sample(code) if code == ACTIVE_CODE else delivered_sample(code)
     )
@@ -398,7 +398,7 @@ async def test_no_events_for_parcel_first_seen_delivered(hass):
 async def test_fires_registered_event_for_new_parcel(hass):
     entry = _entry_with([{CONF_TRACKING_CODE: ACTIVE_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     client.async_get_parcel.return_value = active_sample(ACTIVE_CODE)
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
@@ -428,7 +428,7 @@ async def test_fires_registered_event_for_new_parcel(hass):
 async def test_fires_delivery_time_changed_event(hass, eta_from_raw):
     entry = _entry_with([{CONF_TRACKING_CODE: ACTIVE_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
     events = []
@@ -456,7 +456,7 @@ async def test_losing_the_eta_is_silent(hass, eta_from_raw):
     """value -> null just means the carrier lost the window; not worth an alert."""
     entry = _entry_with([{CONF_TRACKING_CODE: ACTIVE_CODE}])
     entry.add_to_hass(hass)
-    client = AsyncMock()
+    client = batch_client()
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
     events = []
@@ -485,7 +485,7 @@ async def test_a_parcel_the_delivered_list_leaves_out_still_fires_delivered(hass
     hass.config_entries.async_update_entry(
         entry, options={**entry.options, CONF_DELIVERED_FILTER_AMOUNT: 1}
     )
-    client = AsyncMock()
+    client = batch_client()
     coordinator = ACSCourierCoordinator(hass, client, entry)
 
     delivered = []
@@ -499,3 +499,39 @@ async def test_a_parcel_the_delivered_list_leaves_out_still_fires_delivered(hass
 
     assert sorted(e.data["barcode"] for e in delivered) == sorted([first, second])
     assert len(coordinator.delivered) == 1
+
+
+async def test_codes_are_fetched_ten_per_lookup(hass):
+    codes = [f"{index:010d}" for index in range(12)]
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=DOMAIN,
+        options={CONF_PARCELS: [{CONF_TRACKING_CODE: code} for code in codes]},
+    )
+    entry.add_to_hass(hass)
+    client = batch_client()
+    client.async_get_parcel.return_value = None
+    coordinator = ACSCourierCoordinator(hass, client, entry)
+
+    await coordinator._async_update_data()
+
+    batches = [call.args[0] for call in client.async_get_parcels.await_args_list]
+    assert batches == [codes[:10], codes[10:]]
+
+
+async def test_a_failed_batch_keeps_each_parcel_cached(hass):
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=DOMAIN,
+        options={CONF_PARCELS: [{CONF_TRACKING_CODE: ACTIVE_CODE}]},
+    )
+    entry.add_to_hass(hass)
+    client = batch_client()
+    client.async_get_parcel.return_value = out_for_delivery_sample()
+    coordinator = ACSCourierCoordinator(hass, client, entry)
+    first = await coordinator._async_update_data()
+
+    client.async_get_parcels.side_effect = ACSCourierApiError("HTTP 500")
+    second = await coordinator._async_update_data()
+
+    assert [p["barcode"] for p in second] == [p["barcode"] for p in first]
