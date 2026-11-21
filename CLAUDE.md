@@ -35,10 +35,11 @@ you act in one of these areas:
   summary+diagnostic sensors. Add a new non-parcel sensor's unique_id to the set.
 - **Per-parcel sensors are removed by the summary sensor** via
   `entity_registry.async_remove` (self-removal races and leaves ghosts).
-- **The optional pickup-point summaries are a pair.** A carrier that can tell
-  a parcel is destined for a pickup point exposes
-  `en_route_to_pickup_point` for `pickup is true` before it arrives; one that
-  can reach `ParcelStatus.AT_PICKUP_POINT` also exposes `awaiting_pickup`.
+- **The pickup-point summaries are a pair.** A carrier that can deliver to a
+  pickup point or locker exposes both `en_route_to_pickup_point` and
+  `awaiting_pickup`, even before a real parcel has shown the status or flag
+  (they read 0 until then; record it in `PENDING_*`). A carrier without pickup
+  points exposes neither and keeps `pickup` constantly False.
   See *Parcel contract* in `CONVENTIONS.md`. Say "pickup point", not
   "ServicePoint"/"parcel shop"/"locker", for the generic concept; the
   example carrier demonstrates both canonical sensors.
@@ -62,7 +63,13 @@ you act in one of these areas:
   ACS sent *about* a delivery, so it is neutral rather than a second delivery
   signal.
 - **`returning` is not `delivered`**, so a returned parcel keeps being polled at
-  the mid tier.
+  the mid tier, even when `controlPid` 620 says it reached the sender. Whether
+  that should count as delivered is an open maintainer decision.
+- **Pickup sensors are exposed ahead of the data.** ACS Smartpoint lockers
+  exist, so `awaiting_pickup` and `en_route_to_pickup_point` are both
+  registered and read 0. Pending: no status maps to `at_pickup_point` and no
+  route flag is known, so `pickup` comes from `is_pickup(None, ...)` and stays
+  `False` until a locker parcel (`controlPid` 400) settles the mapping.
 - **History is sorted by event time, not wire order.** A date-only event can
   sort before a same-day timed one, so `raw_status` comes from the newest event
   that maps to the parcel's status.
@@ -70,18 +77,20 @@ you act in one of these areas:
   ACS is a Greek domestic carrier (GR/CY, both EET/EEST), so a naive time is
   Greek local time — a settled decision, not a warned assumption.
 - **`delivery_window`** maps from `expectedDeliveryDate`, confirmed against a
-  real parcel. It is a date (midnight), so it fills the whole day:
-  `planned_from` = 00:00, `planned_to` = 23:59:59 Athens. A timed value, if one
-  ever appears, is a point estimate and keeps `planned_to` `None`.
+  real parcel, through `planned_window` in Athens time. It is a date (midnight),
+  so it fills the whole day: `planned_from` = 00:00, `planned_to` = 23:59:59. A
+  timed value, if one ever appears, runs to 23:59:59 the same day. The window is
+  emptied (`planned_for_status`) at `returning` and `delivered`; no status maps
+  to `at_pickup_point`.
 - **Every history code is surfaced, not just the status-giving one.**
   `normalize_parcel` walks all events so an unmapped `controlPid` buried below
   the current status still logs its one-shot report, even with the history
   option off.
 - **`pickupStation` is the origin depot, not a pickup point.** It pairs with a
   `destination*` field set and a collection `pickupDate`, so it has no canonical
-  home and stays in `raw` only — it is not warned about. `pickup_point` is still
-  pending: a real recipient-collection parcel has not been seen to show which
-  field carries it. Weight and dimensions are not exposed.
+  home and stays in `raw` only — it is not warned about. no
+  pickup-point delivery is confirmed, and `pickup_point` is still pending
+  until a real recipient-collection parcel shows which field carries it. Weight and dimensions are not exposed.
 - **The request's required headers are not optional decoration.** Dropping one
   can turn every lookup into a silent "not found" — which is why `api.py` sets
   them explicitly and the tests assert them. What each one is for is in

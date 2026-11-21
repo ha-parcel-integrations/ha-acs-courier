@@ -120,9 +120,9 @@ Standard HA removal applies: **Settings → Devices & Services → ACS Courier �
 |---|---|
 | `sensor.acs_courier_incoming_parcels` | Number of active tracked parcels, full list under the `parcels` attribute |
 | `sensor.acs_courier_parcel_<code>` | One per tracked parcel; state is the canonical status, attributes carry the full normalised parcel |
-| `sensor.acs_courier_next_delivery` | Earliest expected delivery moment across all active parcels |
-| `sensor.acs_courier_en_route_to_pickup_point` | Incoming parcels on their way to a pickup point that have not arrived yet |
-| `sensor.acs_courier_awaiting_pickup` | Incoming parcels that are ready to collect at a pickup point |
+| `sensor.acs_courier_next_delivery` | Earliest expected delivery moment across active parcels whose window has not ended |
+| `sensor.acs_courier_en_route_to_pickup_point` | Incoming parcels on their way to a pickup point that have not arrived yet (reads 0 until an ACS pickup-point status has been seen) |
+| `sensor.acs_courier_awaiting_pickup` | Incoming parcels that are ready to collect at a pickup point (reads 0 until an ACS pickup-point status has been seen) |
 | `sensor.acs_courier_delivered_parcels` | Recently delivered parcels (see the retention option) |
 | `calendar.acs_courier_deliveries` | Read-only calendar of expected deliveries, no extra API calls |
 | `sensor.acs_courier_last_successful_update` | Diagnostic: when ACS Courier was last polled successfully |

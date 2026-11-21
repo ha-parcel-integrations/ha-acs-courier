@@ -153,7 +153,8 @@ def test_resolved_shapes_do_not_warn(caplog):
     assert "pickupStation" not in text
     assert "Europe/Athens" not in text
     assert "expectedDeliveryDate" not in text
-    assert parcel["planned_from"] == "2026-05-18T00:00:00+03:00"
+    assert parcel["status"] is ParcelStatus.RETURNING
+    assert parcel["planned_from"] is None
 
 
 def test_unmapped_event_pid_warns_once_and_keeps_null_status(caplog):
@@ -198,12 +199,22 @@ def test_date_only_eta_spans_the_whole_day():
     assert parcel["planned_to"] == "2026-05-18T23:59:59+03:00"
 
 
-def test_timed_eta_is_a_point_estimate():
+def test_timed_eta_runs_to_the_end_of_that_day():
     raw = out_for_delivery_sample()
     raw["expectedDeliveryDate"] = "2026-05-18T14:30:00"
     parcel = normalize_parcel(raw)
     assert parcel["planned_from"] == "2026-05-18T14:30:00+03:00"
-    assert parcel["planned_to"] is None
+    assert parcel["planned_to"] == "2026-05-18T23:59:59+03:00"
+
+
+def test_returned_and_delivered_parcels_have_no_window():
+    returned = normalize_parcel(returned_item())
+    assert returned["status"] is ParcelStatus.RETURNING
+    assert returned["planned_from"] is None
+    assert returned["planned_to"] is None
+    delivered = delivered_sample()
+    delivered["expectedDeliveryDate"] = "2026-05-18T00:00:00"
+    assert normalize_parcel(delivered)["planned_from"] is None
 
 
 def test_no_eta_leaves_the_window_empty():
@@ -366,7 +377,7 @@ def test_capabilities_match_what_normalize_parcel_actually_returns():
     if "history" in CAPABILITIES:
         assert with_history["history"]
     if "delivery_window" in CAPABILITIES:
-        assert parcel["planned_from"] is not None
+        assert normalize_parcel(out_for_delivery_sample())["planned_from"]
 
 
 def test_pending_and_undeclared_fields_are_none():

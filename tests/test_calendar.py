@@ -1,6 +1,6 @@
 """Tests for the ACS Courier deliveries calendar."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from unittest.mock import MagicMock
 
 from custom_components.acs_courier.calendar import ACSCourierDeliveriesCalendar
@@ -106,3 +106,31 @@ async def test_get_events_filters_by_range():
     end = datetime(2100, 1, 1, tzinfo=UTC)
     events = await cal.async_get_events(MagicMock(), start, end)
     assert {e.uid for e in events} == {"FUTURE"}
+
+
+def test_whole_day_window_is_an_all_day_event():
+    cal = _cal(
+        [
+            _parcel(
+                "A",
+                planned_from="2099-01-01T00:00:00+02:00",
+                planned_to="2099-01-01T23:59:59+02:00",
+            )
+        ]
+    )
+    event = cal.event
+    assert event.start == date(2099, 1, 1)
+    assert event.end == date(2099, 1, 2)
+
+
+def test_timed_window_stays_a_timed_event():
+    cal = _cal(
+        [
+            _parcel(
+                "A",
+                planned_from="2099-01-01T13:00:00+02:00",
+                planned_to="2099-01-01T23:59:59+02:00",
+            )
+        ]
+    )
+    assert isinstance(cal.event.start, datetime)
