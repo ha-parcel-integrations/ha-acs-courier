@@ -43,6 +43,7 @@ A custom Home Assistant integration that tracks your [ACS Courier](https://www.a
 - Per-parcel sensor with the canonical status (`registered` / `in_transit` / `out_for_delivery` / `delivered` / …), the carrier's own status text and a link to the ACS tracking page
 - Summary sensors: incoming parcels, next delivery, recently delivered parcels
 - `acs_courier.track_parcel` / `acs_courier.untrack_parcel` services, so a dashboard button can add a parcel
+- A `contents` field on every parcel, set in your own words with the `acs_courier.update_contents` service or the `contents` field of `acs_courier.track_parcel`; it titles the calendar event and shows on the next-delivery sensor
 - Events + device triggers for no-code automations (parcel registered, status changed, delivered, delivery time changed)
 - Opt-in per-parcel status history
 - Manual refresh button and a diagnostic last-update sensor
@@ -162,8 +163,11 @@ Every payload is the full normalised parcel plus the hub's `device_id`. Events a
 
 | Service | Fields | Description |
 |---|---|---|
-| `acs_courier.track_parcel` | `tracking_code` | Start tracking a parcel |
+| `acs_courier.track_parcel` | `tracking_code`, `contents` (optional) | Start tracking a parcel, optionally noting what is in it |
 | `acs_courier.untrack_parcel` | `tracking_code` | Stop tracking a parcel |
+| `acs_courier.update_contents` | `tracking_code`, `contents` (optional) | Set, replace or clear (empty text) a note on what is in a parcel, tracked or not |
+
+The `contents` text is stored locally, never sent to ACS Courier, and fills the parcel's `contents` field; it titles the parcel's calendar event and shows on the next-delivery sensor.
 
 ## Examples
 

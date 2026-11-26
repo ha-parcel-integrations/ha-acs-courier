@@ -85,9 +85,11 @@ class ACSCourierDeliveriesCalendar(
                 event_start, event_end = days
 
             barcode = parcel.get("barcode") or ""
-            sender = parcel.get("sender")
-            summary = sender or (
-                f"Parcel {barcode}" if barcode else "ACS Courier parcel"
+            # Contents say what is arriving; the sender is the fallback.
+            summary = (
+                parcel.get("contents")
+                or parcel.get("sender")
+                or (f"Parcel {barcode}" if barcode else "ACS Courier parcel")
             )
             description_parts = [
                 f"Barcode: {barcode}" if barcode else None,

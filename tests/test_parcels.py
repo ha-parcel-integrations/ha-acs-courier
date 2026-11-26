@@ -38,6 +38,7 @@ CANONICAL_KEYS = [
     "barcode",
     "sender",
     "receiver",
+    "contents",
     "status",
     "raw_status",
     "delivered",
@@ -348,6 +349,7 @@ def test_normalize_blank_party_fields_become_none_and_no_barcode_no_url():
     parcel = normalize_parcel({"sender": "", "recipientName": "", "recipient": ""})
     assert parcel["sender"] is None
     assert parcel["receiver"] is None
+    assert parcel["contents"] is None
     assert parcel["url"] is None
 
 
